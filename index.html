@@ -12,6 +12,18 @@ body:not(.is-admin) .editable{cursor:default}
 .auth-panel input[type=password]{max-width:130px}
 #status{white-space:nowrap}
 @media print {.auth-panel{display:none!important}}
+
+/* Keep the desktop moodboard composition on narrow screens. */
+@media screen and (max-width: 700px) {
+  .sheet { width:1120px !important; max-width:none !important; padding:55px 55px 80px !important; margin:24px auto 70px !important; min-height:1200px; }
+  .names {font-size:43px !important;gap:24px !important}
+  .amp {font-size:31px !important}
+  .meta {gap:44px !important;justify-content:center !important}
+  .meta label {width:auto !important;justify-content:initial !important}
+  .vendors {grid-template-columns:1fr 1fr !important}
+  .photo-grid {grid-template-columns:repeat(3,minmax(0,1fr)) !important;gap:20px !important}
+  .toolbar {padding:10px 12px}
+}
 </style></head><body><div class="toolbar"><span class="brand">WEDDING MOODBOARD EDITOR</span><span id="status" class="status">연결 중…</span><div class="auth-panel" id="authPanel"><input id="email" type="email" placeholder="관리자 이메일" aria-label="관리자 이메일"><input id="password" type="password" placeholder="비밀번호" aria-label="비밀번호"><button class="btn" id="loginBtn">관리자 로그인</button><button class="btn hidden" id="logoutBtn">로그아웃</button></div><button class="btn admin-only" id="saveBtn">지금 저장</button><button class="btn admin-only" id="viewBtn">미리보기</button><button class="btn" class="admin-only" id="exportBtn">백업 저장</button><button class="btn" class="admin-only" id="importBtn">백업 불러오기</button><button class="btn primary" id="pdfBtn">PDF 저장 / 인쇄</button><input type="file" id="importFile" accept="application/json"></div><div class="variant-bar" id="variantBar" aria-label="웨딩 시안 선택"></div><main class="sheet" id="sheet"><p class="eyebrow editable" contenteditable="true" data-field="eyebrow">WEDDING SHOOT MOODBOARD</p><h1 class="names"><span class="editable" contenteditable="true" data-field="name1">노호진</span><span class="amp">&amp;</span><span class="editable" contenteditable="true" data-field="name2">한규리</span></h1><div class="meta"><label><span class="muted">촬영일</span><input data-field="date" type="date" value="2027-02-26"></label><label><span class="muted">촬영 시간</span><input data-field="time" type="time" value="14:00"></label><label><span class="muted">스튜디오</span><input data-field="studio" value="마크용송"></label></div><hr class="line"><section class="section"><div class="section-head">함께하는 업체</div><div class="vendors"><div class="vendor"><span>드레스</span><div class="editable" contenteditable="true" data-field="dress">미정</div></div><div class="vendor"><span>헤어 · 메이크업</span><div class="editable" contenteditable="true" data-field="hair">미정</div></div><div class="vendor"><span>플래너</span><div class="editable" contenteditable="true" data-field="planner">브라이덜휘 조소연 실장</div></div><div class="vendor"><span>부케</span><div class="editable" contenteditable="true" data-field="bouquet">미정</div></div></div></section><section class="section"><div class="section-head">작가님께 한마디</div><div class="note editable" contenteditable="true" data-field="message">둘 다 카메라 앞이 어색한 편이라 자연스러운 순간을 많이 담아주세요.</div></section><div id="sections"></div><div class="add-panel edit-only"><button class="btn primary" id="addSection">+ 새로운 촬영 시안 섹션 추가</button><p class="hint">예: 로맨틱 무드 · 흑백 촬영 · 야외 촬영 · 드레스별 포즈</p></div><div class="footer editable" contenteditable="true" data-field="footer">OUR WEDDING STORY · 2027</div></main><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script><script src="./config.js"></script><script>
 const $=s=>document.querySelector(s),uid=()=>crypto.randomUUID();
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
@@ -50,5 +62,25 @@ $('#logoutBtn').onclick=async()=>{if(dirty)await persist();await client.auth.sig
 async function checkAdmin(){const {data:{user}}=await client.auth.getUser();if(!user){setAdmin(false);return}const {data,error}=await client.from('moodboard_admins').select('user_id').eq('user_id',user.id).maybeSingle();if(error||!data){await client.auth.signOut();setAdmin(false);alert('관리자로 등록되지 않은 계정입니다.');return}setAdmin(true);status('관리자 편집 모드')}
 async function init(){if(!window.supabase||!window.SUPABASE_URL||!window.SUPABASE_ANON_KEY||window.SUPABASE_URL.includes('YOUR_')){status('설정 필요');alert('config.js에 Supabase URL과 공개 키를 입력해 주세요. README를 참고하세요.');fill();return}client=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);await refresh();await checkAdmin();client.channel('moodboard-updates').on('postgres_changes',{event:'UPDATE',schema:'public',table:'moodboards',filter:'id=eq.main'},()=>{if(!admin&&!dirty)refresh()}).subscribe()}
 window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue=''}});
+
+// Scale the whole page sheet uniformly on phones instead of reflowing its columns.
+function syncDesktopLayoutOnMobile(){
+  const sheet=document.getElementById('sheet');
+  if(!sheet)return;
+  if(window.matchMedia('screen and (max-width: 700px)').matches){
+    const width=document.documentElement.clientWidth;
+    const scale=Math.min(1,(width-16)/1120);
+    sheet.style.zoom=String(scale);
+    sheet.style.marginTop='16px';
+    sheet.style.marginBottom='24px';
+  }else{
+    sheet.style.zoom='';
+    sheet.style.marginTop='';
+    sheet.style.marginBottom='';
+  }
+}
+window.addEventListener('resize',syncDesktopLayoutOnMobile);
+syncDesktopLayoutOnMobile();
+
 init();
 </script></body></html>
