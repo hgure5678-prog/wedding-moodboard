@@ -113,24 +113,5 @@ async function checkAdmin(){const {data:{user}}=await client.auth.getUser();if(!
 async function init(){if(!window.supabase||!window.SUPABASE_URL||!window.SUPABASE_ANON_KEY||window.SUPABASE_URL.includes('YOUR_')){status('설정 필요');alert('config.js에 Supabase URL과 공개 키를 입력해 주세요. README를 참고하세요.');fill();return}client=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);await refresh();await checkAdmin();client.channel('moodboard-updates').on('postgres_changes',{event:'UPDATE',schema:'public',table:'moodboards',filter:'id=eq.main'},()=>{if(!admin&&!dirty)refresh()}).subscribe()}
 window.addEventListener('beforeunload',e=>{if(dirty){e.preventDefault();e.returnValue=''}});
 
-// Scale the whole page sheet uniformly on phones instead of reflowing its columns.
-function syncDesktopLayoutOnMobile(){
-  const sheet=document.getElementById('sheet');
-  if(!sheet)return;
-  if(window.matchMedia('screen and (max-width: 700px)').matches){
-    const width=document.documentElement.clientWidth;
-    const scale=Math.min(1,(width-16)/1120);
-    sheet.style.zoom=String(scale);
-    sheet.style.marginTop='16px';
-    sheet.style.marginBottom='24px';
-  }else{
-    sheet.style.zoom='';
-    sheet.style.marginTop='';
-    sheet.style.marginBottom='';
-  }
-}
-window.addEventListener('resize',syncDesktopLayoutOnMobile);
-syncDesktopLayoutOnMobile();
-
 init();
 </script></body></html>
