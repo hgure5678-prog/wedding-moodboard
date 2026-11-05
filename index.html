@@ -87,26 +87,39 @@ const defaults={fields:{eyebrow:'WEDDING SHOOT MOODBOARD',name1:'노호진',name
 let state=structuredClone(defaults),client,admin=false,preview=false,saveTimer=null,saving=false,dirty=false,activeVariant='v1';
 // Each tab owns its own fields, sections, and favorites. Legacy shared data is copied
 // into existing tabs once so upgrading does not discard previously entered content.
+let normalizedState=null;
 function ensureVariants(){
   if(!Array.isArray(state.variants)||!state.variants.length)state.variants=[{id:'v1',name:'웨딩 시안',favorites:{}}];
+  if(normalizedState===state)return;
   state.variants.forEach(v=>{
     if(!v.id)v.id=uid();
     if(!v.name)v.name='시안';
     if(!v.favorites||typeof v.favorites!=='object')v.favorites={};
-    if(!v.fields||typeof v.fields!=='object')v.fields=structuredClone(state.fields||defaults.fields);
+    if(!v.fields||typeof v.fields!=='object'||Array.isArray(v.fields))v.fields=structuredClone(state.fields||defaults.fields);
     if(!Array.isArray(v.sections))v.sections=structuredClone(state.sections||defaults.sections);
+    // Always give each tab separate objects, even when legacy data reused references.
+    v.fields=structuredClone(v.fields);
+    v.sections=structuredClone(v.sections);
+    v.favorites=structuredClone(v.favorites);
   });
   if(!state.variants.some(v=>v.id===activeVariant))activeVariant=state.variants[0].id;
-  // Compatibility aliases are kept for old backup files, but never used as tab data.
+  normalizedState=state;
+  // Legacy top-level content is retained for backup compatibility only.
 }
 function currentVariant(){ensureVariants();return state.variants.find(v=>v.id===activeVariant)}
-function selectVariant(id){activeVariant=id;fill()}
+function selectVariant(id){
+  if(id===activeVariant)return;
+  // Save pending edits before changing the visible board.
+  if(admin&&dirty)persist();
+  activeVariant=id;
+  fill();
+}
 function renderVariants(){
   ensureVariants();const bar=$('#variantBar');bar.innerHTML='';
   state.variants.forEach(v=>{
     const b=document.createElement('button');b.type='button';
     b.className='variant-tab'+(v.id===activeVariant?' active':'');
-    b.textContent=v.name;b.title='시안 선택 (관리자는 이름 변경 가능)';
+    b.textContent=v.name;b.title='독립된 시안 보기 (관리자는 이름 변경 가능)';
     b.onclick=()=>selectVariant(v.id);
     if(admin&&!preview){
       const edit=document.createElement('span');edit.className='rename';edit.textContent='✎';edit.title='이름 변경 / 삭제';
