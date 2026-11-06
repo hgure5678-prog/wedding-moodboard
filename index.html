@@ -86,6 +86,29 @@ body:not(.is-admin) .editable{cursor:default}
 .photo-fit-control select{max-width:100%;padding:6px 8px;border:1px solid #ddd8d2;border-radius:4px;background:#fff;color:#333;font:inherit}
 @media screen and (max-width:700px){.photo-fit-control{font-size:14px;flex-wrap:wrap}.photo-fit-control select{font-size:14px}}
 @media print{.photo-fit-control{display:none!important}}
+
+/* PDF 인쇄: 섹션 제목만 페이지 하단에 남지 않도록 조정 */
+@media print {
+  /* 사진이 한 줄 이하인 짧은 섹션은 제목·사진을 함께 이동 */
+  #sections > .section:not(:has(.photo-card:nth-child(4))) {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  /* 사진이 많은 섹션은 페이지를 나눌 수 있지만 제목과 설명은 붙임 */
+  #sections > .section .section-title,
+  #sections > .section .section-subtitle {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+  #sections > .section .photo-grid {
+    break-before: avoid;
+    page-break-before: avoid;
+  }
+  #sections > .section .photo-card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}
 </style></head><body><div class="toolbar"><span class="brand">WEDDING MOODBOARD EDITOR</span><span id="status" class="status">연결 중…</span><div class="auth-panel" id="authPanel"><input id="email" type="email" placeholder="관리자 이메일" aria-label="관리자 이메일"><input id="password" type="password" placeholder="비밀번호" aria-label="비밀번호"><button class="btn" id="loginBtn">관리자 로그인</button><button class="btn hidden" id="logoutBtn">로그아웃</button></div><button class="btn admin-only" id="saveBtn">지금 저장</button><button class="btn admin-only" id="viewBtn">미리보기</button><button class="btn" class="admin-only" id="exportBtn">백업 저장</button><button class="btn" class="admin-only" id="importBtn">백업 불러오기</button><button class="btn primary" id="pdfBtn">PDF 저장 / 인쇄</button><input type="file" id="importFile" accept="application/json"></div><div class="variant-bar" id="variantBar" aria-label="웨딩 시안 선택"></div><main class="sheet" id="sheet"><p class="eyebrow editable" contenteditable="true" data-field="eyebrow">WEDDING SHOOT MOODBOARD</p><h1 class="names"><span class="editable" contenteditable="true" data-field="name1">노호진</span><span class="amp">&amp;</span><span class="editable" contenteditable="true" data-field="name2">한규리</span></h1><div class="meta"><label><span class="muted">촬영일</span><input data-field="date" type="date" value="2027-02-26"></label><label><span class="muted">촬영 시간</span><input data-field="time" type="time" value="14:00"></label><label><span class="muted">스튜디오</span><input data-field="studio" value="마크용송"></label></div><hr class="line"><section class="section"><div class="section-head">함께하는 업체</div><div class="vendors"><div class="vendor"><span>드레스</span><div class="editable" contenteditable="true" data-field="dress">미정</div></div><div class="vendor"><span>헤어 · 메이크업</span><div class="editable" contenteditable="true" data-field="hair">미정</div></div><div class="vendor"><span>플래너</span><div class="editable" contenteditable="true" data-field="planner">브라이덜휘 조소연 실장</div></div><div class="vendor"><span>부케</span><div class="editable" contenteditable="true" data-field="bouquet">미정</div></div></div></section><section class="section"><div class="section-head">작가님께 한마디</div><div class="note editable" contenteditable="true" data-field="message">둘 다 카메라 앞이 어색한 편이라 자연스러운 순간을 많이 담아주세요.</div></section><div id="sections"></div><div class="add-panel edit-only"><button class="btn primary" id="addSection">+ 새로운 촬영 시안 섹션 추가</button><p class="hint">예: 로맨틱 무드 · 흑백 촬영 · 야외 촬영 · 드레스별 포즈</p></div><div class="footer editable" contenteditable="true" data-field="footer">OUR WEDDING STORY · 2027</div></main><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script><script src="./config.js"></script><script>
 const $=s=>document.querySelector(s),uid=()=>crypto.randomUUID();
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
